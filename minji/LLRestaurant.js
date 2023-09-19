@@ -159,5 +159,6 @@ const intervalId = setInterval(() => {
 
 const 멋사레스토랑 = new Restaurant();
 
-멋사레스토랑.addOrder("스파게티, 2:2");
+멋사레스토랑.addOrder("스파게티, 2:1");
 멋사레스토랑.addOrder("짬뽕, 3:1");
+멋사레스토랑.addOrder("햄버거, 1:1");
