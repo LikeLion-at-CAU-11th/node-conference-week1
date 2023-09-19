@@ -5,8 +5,8 @@ const eventEmitter = new EventEmitter();
 const STATUS = Object.freeze([
   "요리 대기",
   "요리 중",
-  "서빙중",
-  "서빙완료!",
+  "서빙 중",
+  "서빙 완료!",
 ]);
 const SIZE = Object.freeze([
   "X",
