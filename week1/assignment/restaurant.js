@@ -1,79 +1,65 @@
-const readline = require("readline");
-const events = require("events");
+const EventEmitter = require("events");
+const eventEmitter = new EventEmitter();
 
-class Restaurant extends events.EventEmitter {
+const readline = require("readline");
+
+class Restaurant {
   constructor() {
-    super();
     this.orderQueue = [];
     this.cookingQueue = [];
     this.servingQueue = [];
-
-    // setInterval(() => this.status(), 1000);
+    this.time = 1;
   }
 
-  order(food, size, quantity) {
+  async order(food, size, quantity) {
     for (let i = 0; i < quantity; i++) {
-      this.orderQueue.push({ food, size });
+      await this.orderQueue.push({ food, size });
     }
 
     if (this.cookingQueue.length === 0) {
-      this.nextFood();
+      this.cookFood();
     }
   }
 
-  nextFood() {
-    if (
-      this.orderQueue.length === 0 &&
-      this.cookingQueue.length === 0 &&
-      this.servingQueue === 0
-    ) {
-      console.log("\n오늘 샷다 내려!");
-      process.exit(0);
-    }
-    if (this.orderQueue.length > 0) {
-      this.cookingQueue.push(this.orderQueue.shift());
+  cookFood() {
+    this.cookingQueue.push(this.orderQueue.shift());
 
-      const { food, size } = { ...this.cookingQueue[0] };
-      let cookingTime;
-      switch (size) {
-        case 3:
-          cookingTime = 3000;
-          break;
-        case 2:
-          cookingTime = 2000;
-          break;
-        case 1:
-          cookingTime = 1000;
-          break;
-        default:
-          console.log("\n사이즈가 맞지 않습니다");
-          return;
-      }
+    const { food, size } = { ...this.cookingQueue[0] };
 
-      console.log(`\n${food} ${sizeNumberToSize(size)} 요리중`);
-      setTimeout(() => {
-        console.log(`\n${food} (${sizeNumberToSize(size)}) 요리완료!`);
-        this.cookingQueue.shift();
-        this.emit("cooked", food, size);
-      }, cookingTime);
-    } else if (this.servingQueue.length == 0 && this.cookingQueue.length > 0) {
-      const { food, size } = { ...this.cookingQueue[0] };
-      this.cookingQueue.shift();
-      this.emit("cooked", food, size);
+    let cookingTime;
+    switch (size) {
+      case 3:
+        cookingTime = 3000;
+        break;
+      case 2:
+        cookingTime = 2000;
+        break;
+      case 1:
+        cookingTime = 1000;
+        break;
+      default:
+        console.log("\n사이즈를 잘못 입력했습니다");
+        return;
     }
-    // else {
-    //   const { food, size } = { ...this.servingQueue[queue] };
-    //   restaurant.emit("served");
-    // }
-    // setTimeout(() => {
-    //   if (this.orderQueue.length > 0) {
-    //     this.nextFood();
-    //   }
-    // }, 1000);
+
+    let printStatus = setInterval(() => {
+      console.log(
+        `${this.time++}초 경과 - ${food} ${sizeNumberToSize(size)} 요리중`
+      );
+    }, 1000);
+
+    setTimeout(() => {
+      clearInterval(printStatus);
+      console.log(`${food} (${sizeNumberToSize(size)}) 요리완료!`);
+      eventEmitter.emit("cooked");
+    }, cookingTime);
   }
 
-  serve(food, size) {
-    console.log(`\n${food} ${sizeNumberToSize(size)} 서빙중`);
+  serveFood() {
+    this.servingQueue.push(this.cookingQueue.shift());
+
+    const { food, size } = { ...this.servingQueue[0] };
+
     let servingTime;
     switch (size) {
       case 3:
@@ -86,19 +72,22 @@ class Restaurant extends events.EventEmitter {
         servingTime = 1000;
         break;
       default:
-        console.log("\n불가능한 시간");
         return;
     }
-    setTimeout(() => {
-      console.log(`\n${food} ${sizeNumberToSize(size)} 서빙완료!`);
-      this.servingQueue.shift();
-      this.emit("served");
 
-      if (this.cookingQueue.length > 0) {
-        const { food, size } = { ...this.cookingQueue[0] };
-        this.emit("cooked", food, size);
+    let printStatus = setInterval(() => {
+      console.log(
+        `${this.time++}초 경과 - ${food} ${sizeNumberToSize(size)} 서빙중`
+      );
+    }, 1000);
+
+    setTimeout(() => {
+      clearInterval(printStatus);
+      console.log(`${food} (${sizeNumberToSize(size)}) 서빙완료!`);
+      if (this.orderQueue.length === 0) {
+        console.log("오늘 샷다 내려!");
       } else {
-        this.nextFood();
+        eventEmitter.emit("served");
       }
     }, servingTime);
   }
@@ -116,8 +105,13 @@ sizeNumberToSize = (sizeNumber) => {
 
 const restaurant = new Restaurant();
 
-restaurant.on("cooked", (food, size) => restaurant.serve(food, size));
-restaurant.on("served", () => restaurant.nextFood());
+eventEmitter.on("cooked", () => restaurant.serveFood());
+eventEmitter.on("served", () => restaurant.cookFood());
+eventEmitter.on("shutterDown", () => {
+  if (this.orderQueue.length === 0) {
+    console.log("오늘 샷다 내려!");
+  }
+});
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -140,7 +134,7 @@ const getOrder = () => {
       );
       count++;
       if (count === 6) {
-        console.log("\n재료 소진입니다");
+        console.log("\n재료 소진입니다 다음에 이용해주세요");
         rl.close();
       }
       getOrder();
