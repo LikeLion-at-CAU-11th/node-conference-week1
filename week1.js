@@ -26,7 +26,7 @@ const processing = () => {
   let cookingTime = -1;
   let servingTime = 0;
   let servingAmounts = 0;
-  const size = foodList.length;
+  // const size = foodList.length;
   const interval = setInterval(()=>{
     seconds++;
     cookingTime++;
@@ -37,13 +37,13 @@ const processing = () => {
       servingTime++;
     }
     if(servingIdx>=0){
-      if(servingAmounts > 0 && servingTime == foodList[servingIdx][1]){
+      if(servingAmounts > 0 && servingIdx < foodList.length && servingTime == foodList[servingIdx][1]){
         servingAmounts--;
         servingTime = 0;
       }
     }
-
-    for(let i = 0; i<size;i++){
+    console.log(foodList);
+    for(let i = 0; i<foodList.length;i++){
 
       if(cookingTime==foodList[i][1]){ // 요리 다 되면
         cookingTime = 0;
@@ -68,9 +68,10 @@ const processing = () => {
       }
       
     }
-    if(servingIdx == size){
+    if(servingIdx == foodList.length - 1){
       finish(interval);
     }
+    rl.prompt();
   }, 1000);
 }
 
@@ -91,6 +92,7 @@ function makeFoodSize (food) {
 const finish = (interval) => {
   clearInterval(interval);
   console.log('오늘 샷다 내려!');
+  rl.close();
 }
 
 rl.question("원하는 음식을 입력하시오(예 - '스파게티, 3:1') : ", (line)=>{
@@ -104,22 +106,21 @@ rl.question("원하는 음식을 입력하시오(예 - '스파게티, 3:1') : ",
 })
 
 rl.on('line', (line)=>{
-  console.log("원하는 음식을 입력하시오(예 - '스파게티, 3:1')");
-
+  console.log("추가하려는 음식을 입력하세요. 없으면 'X'를 입력해주세요.");
+  if(line === "quit")rl.close();
   const [foodName, foodInfo] = line.split(',').map(part => part.trim());
   const [what, num] = foodInfo.split(':');
-  for(let i=0;i<num;i++){ 
-    foodList.push({foodName:what});
-    console.log(foodName, what);
+  for(let i=0;i<num;i++){
+    foodList.push([foodName, what]);
   }
 });
+rl.on("close", ()=>{
+  process.exit();
+})
 
 emitter.on('cooking', ()=>{ 
   processing();
 })
-
-
-
 
 
 
@@ -131,6 +132,5 @@ emitter.on('cooking', ()=>{
 //     console.log('hi');
 //   }
 // })
-
 
 
